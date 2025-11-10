@@ -1,4 +1,4 @@
-# Autonomous Smart Irrigation System
+# Floriva - Smart Plant Irrigation System
 
 [![Hardware](https://img.shields.io/badge/Hardware-ESP32-blueviolet.svg)](https://www.espressif.com/en/products/socs/esp32)
 [![Firmware](https://img.shields.io/badge/Firmware-PlatformIO-orange.svg)](https://platformio.org/)
