@@ -1,18 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { Thermometer, Droplets, Sun } from "lucide-react";
-import { Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  Tooltip,
-  Legend,
-} from "chart.js";
-
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
+import LineChart from "../components/LineChart";
 
 const BACKEND_URL = "https://room-ambiance-monitor.onrender.com";
 const socket = io(BACKEND_URL);
@@ -27,44 +16,31 @@ export default function Dashboard() {
 
   useEffect(() => {
     socket.on("sensorData", (data) => {
+      const now = new Date();
+
       setTemperature(data.temperatura || 0);
       setHumidity(data.umiditate || 0);
       setLight(data.lumina || 0);
 
-      setTempHistory((prev) => [...prev.slice(-49), data.temperatura || 0]);
-      setHumidHistory((prev) => [...prev.slice(-49), data.umiditate || 0]);
-      setLightHistory((prev) => [...prev.slice(-49), data.lumina || 0]);
+      setTempHistory((prev) => [
+        ...prev.slice(-49),
+        { time: now, value: data.temperatura || 0 },
+      ]);
+      setHumidHistory((prev) => [
+        ...prev.slice(-49),
+        { time: now, value: data.umiditate || 0 },
+      ]);
+      setLightHistory((prev) => [
+        ...prev.slice(-49),
+        { time: now, value: data.lumina || 0 },
+      ]);
     });
 
     return () => socket.off("sensorData");
   }, []);
 
-  const chartOptions = {
-    responsive: true,
-    plugins: { legend: { display: false } },
-    scales: { x: { display: false }, y: { display: false } },
-    elements: {
-      line: { tension: 0.4 },
-      point: { radius: 0 },
-    },
-  };
-
-  const createChartData = (data, color) => ({
-    labels: data.map((_, i) => i),
-    datasets: [
-      {
-        data,
-        borderColor: color,
-        backgroundColor: `${color}20`,
-        fill: true,
-        borderWidth: 2,
-      },
-    ],
-  });
-
   return (
     <main className="flex-1 bg-[#f9fafb] p-10 overflow-y-auto">
-      {/* Environment Overview */}
       <div className="bg-white rounded-3xl shadow-md p-8 mb-10 hover:shadow-lg transition">
         <h2 className="text-2xl font-bold text-[#0f3d33] mb-6">
           Environment Overview
@@ -80,12 +56,7 @@ export default function Dashboard() {
             <p className="text-4xl font-bold text-[#0f3d33] mb-3">
               {temperature.toFixed(1)}°C
             </p>
-            <div className="h-20">
-              <Line
-                data={createChartData(tempHistory, "#2e8b57")}
-                options={chartOptions}
-              />
-            </div>
+            <LineChart label="Temperature" dataPoints={tempHistory} />
           </div>
 
           {/* Humidity */}
@@ -97,12 +68,7 @@ export default function Dashboard() {
             <p className="text-4xl font-bold text-[#0f3d33] mb-3">
               {humidity.toFixed(1)}%
             </p>
-            <div className="h-20">
-              <Line
-                data={createChartData(humidHistory, "#2e8b57")}
-                options={chartOptions}
-              />
-            </div>
+            <LineChart label="Humidity" dataPoints={humidHistory} />
           </div>
 
           {/* Light */}
@@ -112,12 +78,7 @@ export default function Dashboard() {
               <h3 className="font-semibold text-gray-700">Light</h3>
             </div>
             <p className="text-4xl font-bold text-[#0f3d33] mb-3">{light} lx</p>
-            <div className="h-20">
-              <Line
-                data={createChartData(lightHistory, "#2e8b57")}
-                options={chartOptions}
-              />
-            </div>
+            <LineChart label="Light" dataPoints={lightHistory} />
           </div>
         </div>
       </div>
