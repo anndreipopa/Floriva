@@ -21,7 +21,9 @@ const pool = new Pool({
 const allowedOrigins = [
     "https://ramdashboard.netlify.app", // Pentru productie
     "http://127.0.0.1:5500",           // Pentru testare locala cu Live Server
-    "http://localhost:5500"             // O alternativa pentru Live Server
+    "http://localhost:5500",
+    "http://localhost:5173",
+    "https://localhost:5173"          // O alternativa pentru Live Server
 ];
 
 // 2. Definim o singura data optiunile de configurare
