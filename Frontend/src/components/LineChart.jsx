@@ -90,7 +90,7 @@ export default function LineChart({ label, dataPoints }) {
         y: {
           title: {
             display: true,
-            text: "Scale",
+            text: "Value",
             color: "#555",
             font: { size: 14, weight: "bold" },
           },

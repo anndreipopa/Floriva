@@ -10,33 +10,66 @@ export default function Dashboard() {
   const [temperature, setTemperature] = useState(0);
   const [humidity, setHumidity] = useState(0);
   const [light, setLight] = useState(0);
+
   const [tempHistory, setTempHistory] = useState([]);
   const [humidHistory, setHumidHistory] = useState([]);
   const [lightHistory, setLightHistory] = useState([]);
 
+  // 1️⃣ Datele live doar pentru valorile instantanee
   useEffect(() => {
     socket.on("sensorData", (data) => {
-      const now = new Date();
-
       setTemperature(data.temperatura || 0);
       setHumidity(data.umiditate || 0);
       setLight(data.lumina || 0);
-
-      setTempHistory((prev) => [
-        ...prev.slice(-49),
-        { time: now, value: data.temperatura || 0 },
-      ]);
-      setHumidHistory((prev) => [
-        ...prev.slice(-49),
-        { time: now, value: data.umiditate || 0 },
-      ]);
-      setLightHistory((prev) => [
-        ...prev.slice(-49),
-        { time: now, value: data.lumina || 0 },
-      ]);
     });
 
     return () => socket.off("sensorData");
+  }, []);
+
+  // 2️⃣ Datele istorice doar din API (actualizate o dată la 5 min)
+  async function fetchHistory() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/history`);
+    const history = await res.json();
+
+    if (!Array.isArray(history)) {
+      console.warn("Format invalid pentru history:", history);
+      return;
+    }
+
+    // Sortăm descrescător după dată (ca să apară de la cele mai vechi la cele mai noi)
+    const sorted = [...history].sort(
+      (a, b) => new Date(a.created_at) - new Date(b.created_at)
+    );
+
+    setTempHistory(
+      sorted.map((item) => ({
+        time: new Date(item.created_at),
+        value: parseFloat(item.temperature) || 0,
+      }))
+    );
+    setHumidHistory(
+      sorted.map((item) => ({
+        time: new Date(item.created_at),
+        value: parseFloat(item.humidity) || 0,
+      }))
+    );
+    setLightHistory(
+      sorted.map((item) => ({
+        time: new Date(item.created_at),
+        value: parseFloat(item.light) || 0,
+      }))
+    );
+  } catch (err) {
+    console.error("Eroare la fetch history:", err);
+  }
+}
+
+  useEffect(() => {
+    fetchHistory();
+    // opțional — actualizează graficul la fiecare 5 minute
+    const interval = setInterval(fetchHistory, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
