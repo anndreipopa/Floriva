@@ -9,7 +9,7 @@
 
 An end-to-end IoT prototype designed to bring intelligent automation to plant care. This system moves beyond simple timers, using real-time environmental data to make smart decisions. The deployed prototype successfully collects, processes, visualizes, and stores sensor data on a globally accessible web dashboard.
 
-### **➡️ [View the Live Dashboard Here](https://ramdashboard.netlify.app/) ⬅️**
+### **➡️ [View the Live Dashboard Here](https://florivatest.netlify.app/) ⬅️**
 
 ---
 
