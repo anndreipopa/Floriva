@@ -1,0 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+@import "tailwindcss";
+:root {
+  --floriva-green: #0f3d33;
+  --floriva-bg: #f6f8f5;
+  --floriva-accent: #2e8b57;
+  --floriva-text: #1b4332;
+}
+
+body {
+  @apply bg-[var(--floriva-bg)] text-[var(--floriva-text)] font-sans;
+  font-family: Poppins, sans-serif;
+  @apply bg-[#f6f8f5] text-[#1b4332];
+}
