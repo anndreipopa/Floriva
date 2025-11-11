@@ -1,30 +1,27 @@
 import React, { useState } from "react";
-import { Home, Leaf, Settings, Power, Github, Linkedin, Menu } from "lucide-react";
+import { Home, Leaf, Settings, Power, Github, Linkedin, Menu, X } from "lucide-react";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
-
   const toggleMenu = () => setIsOpen((prev) => !prev);
 
   return (
     <>
-      {/* === Sticky Green Header (MOBILE ONLY) === */}
-      {!isOpen && (
-        <header className="fixed top-0 left-0 w-full bg-[#0f3d33] text-white flex items-center justify-between px-6 py-4 shadow-md z-50 md:hidden">
-          <h1 className="text-2xl font-semibold">Floriva.</h1>
-          <button
-            onClick={toggleMenu}
-            className="text-white focus:outline-none transition-transform"
-          >
-            <Menu size={28} />
-          </button>
-        </header>
-      )}
+      {/* === Sticky Green Header (mobile only) === */}
+      <header className="fixed top-0 left-0 w-full bg-[#0f3d33] text-white flex items-center justify-between px-6 py-4 shadow-md z-50 md:hidden">
+        <h1 className="text-2xl font-semibold">Floriva.</h1>
+        <button
+          onClick={toggleMenu}
+          className="text-white focus:outline-none transition-transform"
+        >
+          {isOpen ? <X size={28} /> : <Menu size={28} />}
+        </button>
+      </header>
 
       {/* === Sidebar === */}
       <aside
         className={`fixed md:static left-0 bg-[#0f3d33] text-white flex flex-col justify-between py-8 px-6 z-40 h-[calc(100%-4rem)] md:h-full w-64 transform transition-transform duration-300 md:translate-x-0
-          ${isOpen ? "translate-x-0 top-16" : "-translate-x-full top-16 md:translate-x-0 md:top-0"}`}
+          ${isOpen ? "translate-x-0 top-16" : "-translate-x-full top-16 md:top-0"}`}
       >
         {/* === Top Section === */}
         <div>
@@ -125,7 +122,7 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* === Spacer for mobile to push content below header === */}
+      {/* === Spacer to push content below header === */}
       <div className="h-16 md:hidden" />
     </>
   );
