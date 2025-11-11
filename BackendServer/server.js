@@ -19,7 +19,7 @@ const pool = new Pool({
 });
 
 const allowedOrigins = [
-    "https://ramdashboard.netlify.app", // Pentru productie
+    "https://floriva1.netlify.app/", // Pentru productie
     "http://127.0.0.1:5500",           // Pentru testare locala cu Live Server
     "http://localhost:5500",
     "http://localhost:5173",
