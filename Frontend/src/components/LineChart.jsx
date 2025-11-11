@@ -13,23 +13,29 @@ import {
 } from "chart.js";
 import "chartjs-adapter-date-fns";
 
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, Title, TimeScale);
+ChartJS.register(
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  Tooltip,
+  Legend,
+  Title,
+  TimeScale
+);
 
-// 🌟 Plugin pentru umbră lungă pe linie (fără a o dubla)
+// 🌟 Shadow glow effect for line
 const shadowLinePlugin = {
   id: "shadowLinePlugin",
   beforeDatasetsDraw: (chart) => {
     const { ctx } = chart;
     ctx.save();
-
-    // Setări pentru glow / umbră
     ctx.shadowColor = "rgba(46,139,87,0.55)";
-    ctx.shadowBlur = 18;       // 👈 mai lung
-    ctx.shadowOffsetY = 8;     // 👈 mai jos
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 8;
     ctx.shadowOffsetX = 0;
   },
   afterDatasetsDraw: (chart) => {
-    // resetăm contextul după ce Chart.js desenează linia originală
     chart.ctx.restore();
   },
 };
@@ -46,8 +52,8 @@ export default function LineChart({ label, dataPoints }) {
           backgroundColor: "rgba(46, 139, 87, 0.1)",
           tension: 0.4,
           fill: true,
-          pointRadius: 1,
-          borderWidth: 3.5,
+          pointRadius: 1.5,
+          borderWidth: 3,
         },
       ],
     }),
@@ -57,9 +63,16 @@ export default function LineChart({ label, dataPoints }) {
   const options = useMemo(
     () => ({
       responsive: true,
+      maintainAspectRatio: false, // 🔑 allows flexible height
+      interaction: {
+        mode: "index",
+        intersect: false,
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
+          bodyFont: { size: 12 },
+          titleFont: { size: 12 },
           callbacks: {
             label: (context) => `Value: ${context.parsed.y}`,
           },
@@ -75,15 +88,15 @@ export default function LineChart({ label, dataPoints }) {
           },
           ticks: {
             color: "#777",
-            source: "data",
-            autoSkip: false,
-            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 4, // fewer ticks for mobile
+            font: { size: 10 },
           },
           title: {
             display: true,
             text: "Time",
             color: "#555",
-            font: { size: 14, weight: "bold" },
+            font: { size: 12, weight: "bold" },
           },
           grid: { display: false },
         },
@@ -92,9 +105,9 @@ export default function LineChart({ label, dataPoints }) {
             display: true,
             text: "Value",
             color: "#555",
-            font: { size: 14, weight: "bold" },
+            font: { size: 12, weight: "bold" },
           },
-          ticks: { color: "#777" },
+          ticks: { color: "#777", font: { size: 10 } },
           grid: { color: "#e4e4e4" },
         },
       },
@@ -103,11 +116,13 @@ export default function LineChart({ label, dataPoints }) {
   );
 
   return (
-    <div className="bg-white rounded-2xl p-6 w-full transition-all duration-200">
+    <div className="bg-white rounded-2xl p-3 sm:p-6 w-full h-48 sm:h-64 md:h-72 transition-all duration-200">
       {dataPoints.length > 0 ? (
         <Line data={data} options={options} plugins={[shadowLinePlugin]} />
       ) : (
-        <p className="text-center text-gray-500 italic">No data available</p>
+        <p className="text-center text-gray-500 italic text-sm sm:text-base">
+          No data available
+        </p>
       )}
     </div>
   );
