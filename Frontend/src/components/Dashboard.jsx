@@ -6,6 +6,71 @@ import LineChart from "./LineChart";
 const BACKEND_URL = "https://room-ambiance-monitor.onrender.com";
 const socket = io(BACKEND_URL);
 
+// --- Best Growth Window Helper ---
+function calculateBestGrowthWindow(tempHistory, humidHistory, lightHistory) {
+  if (
+    tempHistory.length === 0 ||
+    humidHistory.length === 0 ||
+    lightHistory.length === 0
+  ) {
+    return null;
+  }
+
+  const length = Math.min(
+    tempHistory.length,
+    humidHistory.length,
+    lightHistory.length
+  );
+
+  let bestStart = null;
+  let bestEnd = null;
+  let currentStart = null;
+
+  for (let i = 0; i < length; i++) {
+    const t = tempHistory[i].value;
+    const h = humidHistory[i].value;
+    const l = lightHistory[i].value;
+
+    // Use the same ranges you already use conceptually
+    const tempOK = t >= 20 && t <= 30;
+    const humOK = h >= 40 && h <= 75;
+    const lightOK = l >= 100 && l <= 1500;
+
+    const allGood = tempOK && humOK && lightOK;
+
+    if (allGood && currentStart === null) {
+      currentStart = tempHistory[i].time;
+    }
+
+    if (!allGood && currentStart !== null) {
+      const currentEnd = tempHistory[i - 1].time;
+
+      if (!bestStart || currentEnd - currentStart > bestEnd - bestStart) {
+        bestStart = currentStart;
+        bestEnd = currentEnd;
+      }
+
+      currentStart = null;
+    }
+  }
+
+  // Close streak if it reaches the end
+  if (currentStart !== null) {
+    const currentEnd = tempHistory[length - 1].time;
+    if (!bestStart || currentEnd - currentStart > bestEnd - bestStart) {
+      bestStart = currentStart;
+      bestEnd = currentEnd;
+    }
+  }
+
+  if (!bestStart || !bestEnd) return null;
+
+  const fmt = (d) =>
+    d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  return `${fmt(bestStart)} – ${fmt(bestEnd)}`;
+}
+
 export default function Dashboard() {
   const [temperature, setTemperature] = useState(0);
   const [humidity, setHumidity] = useState(0);
@@ -146,113 +211,131 @@ export default function Dashboard() {
 
         {/* ENVIRONMENT SUMMARY */}
         <section
-  className="
-    bg-white rounded-3xl shadow-md p-6 flex flex-col
+          className="
+            bg-white rounded-3xl shadow-md p-6 flex flex-col
 
-    order-2
-    xl:order-none xl:col-start-1 xl:row-start-2
-  "
->
-  <h2 className="text-xl sm:text-2xl font-bold text-[#0f3d33] mb-4">
-    Environment Summary
-  </h2>
+            order-2
+            xl:order-none xl:col-start-1 xl:row-start-2
+          "
+        >
+          <h2 className="text-xl sm:text-2xl font-bold text-[#0f3d33] mb-4">
+            Environment Summary
+          </h2>
 
-  {/* --- CALCULATED VALUES --- */}
-  {(() => {
-    const avgTemp = parseFloat(avg(tempHistory));
-    const avgHum = parseFloat(avg(humidHistory));
-    const avgLight = parseFloat(
-      (
-        lightHistory.reduce((a, b) => a + b.value, 0) /
-        (lightHistory.length || 1)
-      ).toFixed(0)
-    );
+          {/* --- CALCULATED VALUES --- */}
+          {(() => {
+            const avgTemp = parseFloat(avg(tempHistory));
+            const avgHum = parseFloat(avg(humidHistory));
+            const avgLight = parseFloat(
+              (
+                lightHistory.reduce((a, b) => a + b.value, 0) /
+                (lightHistory.length || 1)
+              ).toFixed(0)
+            );
 
-    // Temperature interpretation
-    let tempStatus =
-      avgTemp < 20 ? "Too cold" :
-      avgTemp > 30 ? "Too hot" :
-      "Normal";
+            // Temperature interpretation
+            let tempStatus =
+              avgTemp < 20 ? "Too cold" :
+              avgTemp > 30 ? "Too hot" :
+              "Normal";
 
-    // Humidity interpretation
-    let humStatus =
-      avgHum < 40 ? "Too dry" :
-      avgHum > 75 ? "Too humid" :
-      "Normal";
+            // Humidity interpretation
+            let humStatus =
+              avgHum < 40 ? "Too dry" :
+              avgHum > 75 ? "Too humid" :
+              "Normal";
 
-    // Light interpretation
-    let lightStatus =
-      avgLight < 100 ? "Low light" :
-      avgLight > 1500 ? "Too harsh" :
-      "Adequate";
+            // Light interpretation
+            let lightStatus =
+              avgLight < 100 ? "Low light" :
+              avgLight > 1500 ? "Too harsh" :
+              "Adequate";
 
-    // Combined growth rating
-    let growthStatus = "Ideal Growth Conditions";
+            // Best growth interval based on readings
+            const bestWindow = calculateBestGrowthWindow(
+              tempHistory,
+              humidHistory,
+              lightHistory
+            );
 
-    if (lightStatus === "Low light") growthStatus = "Low Light – Slowed Growth";
-    else if (lightStatus === "Too harsh") growthStatus = "Too Much Light – Stress Likely";
-    else if (tempStatus !== "Normal") growthStatus = "Temperature Suboptimal";
-    else if (humStatus !== "Normal") growthStatus = "Humidity Suboptimal";
+            return (
+              <>
+                {/* MINI CARDS */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
 
-    return (
-      <>
-        {/* MINI CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                  {/* AVG TEMP */}
+                  <div className="bg-[#f9fafb] rounded-2xl p-4 shadow-sm flex flex-col items-start">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Thermometer className="text-[#0f3d33]" size={18} />
+                      <span className="text-sm text-gray-600 font-medium">Avg Temp</span>
+                    </div>
+                    <span className="text-2xl font-bold text-[#0f3d33]">
+                      {avgTemp}°C
+                    </span>
+                    <span className="text-sm mt-1 text-gray-500">{tempStatus}</span>
+                  </div>
 
-          {/* AVG TEMP */}
-          <div className="bg-[#f9fafb] rounded-2xl p-4 shadow-sm flex flex-col items-start">
-            <div className="flex items-center gap-2 mb-1">
-              <Thermometer className="text-[#0f3d33]" size={18} />
-              <span className="text-sm text-gray-600 font-medium">Avg Temp</span>
-            </div>
-            <span className="text-2xl font-bold text-[#0f3d33]">
-              {avgTemp}°C
-            </span>
-            <span className="text-sm mt-1 text-gray-500">{tempStatus}</span>
-          </div>
+                  {/* AVG HUMIDITY */}
+                  <div className="bg-[#f9fafb] rounded-2xl p-4 shadow-sm flex flex-col items-start">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Droplets className="text-[#0f3d33]" size={18} />
+                      <span className="text-sm text-gray-600 font-medium">
+                        Avg Humidity
+                      </span>
+                    </div>
+                    <span className="text-2xl font-bold text-[#0f3d33]">
+                      {avgHum}%
+                    </span>
+                    <span className="text-sm mt-1 text-gray-500">{humStatus}</span>
+                  </div>
 
-          {/* AVG HUMIDITY */}
-          <div className="bg-[#f9fafb] rounded-2xl p-4 shadow-sm flex flex-col items-start">
-            <div className="flex items-center gap-2 mb-1">
-              <Droplets className="text-[#0f3d33]" size={18} />
-              <span className="text-sm text-gray-600 font-medium">
-                Avg Humidity
-              </span>
-            </div>
-            <span className="text-2xl font-bold text-[#0f3d33]">
-              {avgHum}%
-            </span>
-            <span className="text-sm mt-1 text-gray-500">{humStatus}</span>
-          </div>
+                  {/* AVG LIGHT */}
+                  <div className="bg-[#f9fafb] rounded-2xl p-4 shadow-sm flex flex-col items-start">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Sun className="text-[#0f3d33]" size={18} />
+                      <span className="text-sm text-gray-600 font-medium">Avg Light</span>
+                    </div>
+                    <span className="text-2xl font-bold text-[#0f3d33]">
+                      {avgLight} lx
+                    </span>
+                    <span className="text-sm mt-1 text-gray-500">{lightStatus}</span>
+                  </div>
 
-          {/* AVG LIGHT */}
-          <div className="bg-[#f9fafb] rounded-2xl p-4 shadow-sm flex flex-col items-start">
-            <div className="flex items-center gap-2 mb-1">
-              <Sun className="text-[#0f3d33]" size={18} />
-              <span className="text-sm text-gray-600 font-medium">Avg Light</span>
-            </div>
-            <span className="text-2xl font-bold text-[#0f3d33]">
-              {avgLight} lx
-            </span>
-            <span className="text-sm mt-1 text-gray-500">{lightStatus}</span>
-          </div>
+                </div>
 
-        </div>
+                {/* GROWTH WINDOW / BEST TIME INTERVAL */}
+                <div className="bg-[#f9fafb] rounded-2xl p-4 shadow-sm">
+                  <p className="text-gray-600 font-medium mb-1">
+                    Best Growth Interval
+                  </p>
+                  <p className="text-xl font-bold text-[#0f3d33]">
+                    {bestWindow || "No optimal interval today"}
+                  </p>
+                  {/* Additional growth hint */}
+                  <p className="text-sm text-gray-500 mt-1">
+                    {(() => {
+                      if (!bestWindow) return "Conditions were not optimal at any point.";
 
-        {/* GROWTH WINDOW / OVERALL ASSESSMENT */}
-        <div className="bg-[#f9fafb] rounded-2xl p-4 shadow-sm">
-          <p className="text-gray-600 font-medium mb-1">
-            Best Growth Condition
-          </p>
-          <p className="text-xl font-bold text-[#0f3d33]">
-            {growthStatus}
-          </p>
-        </div>
-      </>
-    );
-  })()}
-</section>
+                      // Determine which factor is the weakest
+                      if (tempStatus !== "Normal") {
+                        return `*In existing conditions, but not ideal - ${tempStatus.toLowerCase()}.`;
+                      }
+                      if (humStatus !== "Normal") {
+                        return `*In existing conditions, but not ideal - ${humStatus.toLowerCase()}.`;
+                      }
+                      if (lightStatus !== "Adequate") {
+                        return `*In existing conditions, but not ideal - ${lightStatus.toLowerCase()}.`;
+                      }
 
+                      return "Ideal - perfect growth conditions.";
+                    })()}
+                    </p>
+                </div>
+                
+              </>
+            );
+          })()}
+        </section>
 
         {/* WEATHER FORECAST */}
         <section
