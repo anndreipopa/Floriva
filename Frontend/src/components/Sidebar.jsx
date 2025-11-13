@@ -101,7 +101,7 @@ export default function Sidebar() {
 
           <div className="mt-6 text-xs text-gray-400 text-center leading-snug">
             <p>
-              v0.1.0 — <span className="text-gray-300">Work in Progress</span>
+              v0.2.0 — <span className="text-gray-300">Work in Progress</span>
             </p>
             <p className="mt-2 text-gray-500">
               Made by <span className="text-white font-medium">Andrei Popa</span>
