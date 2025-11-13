@@ -47,7 +47,7 @@ export default function LineChart({ dataPoints }) {
             type="monotone"
             dataKey="value"
             stroke="#0f3d33"
-            strokeWidth={2}
+            strokeWidth={3.5}
             dot={false}
           />
 
