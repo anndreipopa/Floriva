@@ -6,7 +6,7 @@ import LineChart from "./LineChart";
 const BACKEND_URL = "https://room-ambiance-monitor.onrender.com";
 const socket = io(BACKEND_URL);
 
-// --- Best Growth Window Helper (returns interval + data slice) ---
+// Function to calc best growth interval
 function calculateBestGrowthWindow(tempHistory, humidHistory, lightHistory) {
   if (
     tempHistory.length === 0 ||
@@ -110,7 +110,7 @@ useEffect(() => {
     setHumidity(data.umiditate || 0);
     setLight(data.lumina || 0);
 
-    setLastServerUpdate(Date.now()); // <-- TRACK LAST SERVER CONTACT
+    setLastServerUpdate(Date.now()); // Track last server contact for STATUS
   });
 
   return () => socket.off("sensorData");
@@ -181,12 +181,12 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, []);
 
-  // --- Server connection ---
+  // Server connection 
 const [lastServerUpdate, setLastServerUpdate] = useState(Date.now());
 const SERVER_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 const serverOnline = Date.now() - lastServerUpdate < SERVER_TIMEOUT_MS;
 
-// --- Tank level (temporary mock value until hardware exists) ---
+// Tank level (fake value, no hardware connection yet)
 const tankLevel = 65; // %
   // Helpers for summary
   const avg = (arr) =>
@@ -281,7 +281,7 @@ const tankLevel = 65; // %
             Environment Summary
           </h2>
 
-          {/* --- CALCULATED VALUES --- */}
+          {/*CALCULATED VALUES*/}
           {(() => {
             const avgTemp = parseFloat(avg(tempHistory));
             const avgHum = parseFloat(avg(humidHistory));
@@ -382,7 +382,7 @@ const tankLevel = 65; // %
                   </div>
                 </div>
 
-                {/* GROWTH WINDOW / BEST TIME INTERVAL */}
+                {/*BEST GROWTH INTERVAL */}
                 <div className="bg-[#f9fafb] rounded-2xl p-4 shadow-sm">
                   <p className="text-gray-600 font-medium mb-1">
                     Best Growth Interval
@@ -391,7 +391,7 @@ const tankLevel = 65; // %
                     {bestWindow ? bestWindow.interval : "No optimal interval today"}
                   </p>
 
-                  {/* Additional growth hint based on window averages */}
+                  {/* Additional growth hint*/}
                   <p className="text-sm text-gray-500 mt-1">
                     {(() => {
                       if (!bestWindow)

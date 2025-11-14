@@ -64,7 +64,7 @@ export default function LineChart({ dataPoints }) {
             }}
           />
 
-          {/* This draws BOTH the line and the fading fill */}
+          {/* Line and gradient */}
           <Area
             type="monotone"
             dataKey="value"
