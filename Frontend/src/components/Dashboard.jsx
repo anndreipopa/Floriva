@@ -197,7 +197,7 @@ const tankLevel = 65; // %
   flex-1 bg-[#f9fafb]
   p-4 sm:p-6 md:p-10
   pt-20 xl:pt-10
-  overflow-y-auto xl:overflow-hidden
+  min-h-screen overflow-y-auto
   min-h-screen
 ">
 
