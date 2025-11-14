@@ -193,23 +193,17 @@ const tankLevel = 65; // %
     (arr.reduce((a, b) => a + b.value, 0) / (arr.length || 1)).toFixed(1);
 
   return (
-<main className="
-  flex-1 bg-[#f9fafb]
-  p-4 sm:p-6 md:p-10
-  pt-20 xl:pt-10
-  min-h-screen overflow-y-auto
-  min-h-screen
-">
-
-      {/* GRID */}
-<div className="flex justify-center items-start xl:items-center relative xl:-top-[8px]">
-  <div className="
-      grid gap-6 
-      grid-cols-1 
-      w-full max-w-[1600px]
-      xl:grid-cols-[2.8fr_1fr]
-      xl:grid-rows-[auto_auto]
-  ">
+      <main className="
+        flex-1 bg-[#f9fafb] p-4 sm:p-6 md:p-10 pt-20 xl:pt-10 min-h-screen overflow-y-auto min-h-screen">
+            {/* GRID */}
+      <div className="flex justify-center items-start xl:items-center relative xl:-top-[8px]">
+        <div className="
+            grid gap-6 
+            grid-cols-1 
+            w-full max-w-[1600px]
+            xl:grid-cols-[2.8fr_1fr]
+            xl:grid-rows-[auto_auto]
+        ">
         {/* ENVIRONMENT OVERVIEW */}
         <section
           className="
@@ -222,50 +216,55 @@ const tankLevel = 65; // %
             Environment Overview
           </h2>
 
-          {/* CHARTS SCROLLER */}
-          <div
-            className="
-              flex overflow-x-auto snap-x snap-mandatory gap-6 no-scrollbar
+          {/* CHARTS (responsive grid, no horizontal scroll) */}
+              <div
+                className="
+                  grid gap-6
+                  grid-cols-1              /* phones */
+                  sm:grid-cols-2           /* tablets */
+                  lg:grid-cols-3           /* desktops */
+                "
+              >
+                {/* Temperature */}
+                <div className="bg-[#f9fafb] p-4 rounded-2xl shadow-sm flex flex-col">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Thermometer className="text-[#0f3d33]" size={20} />
+                    <h3 className="font-semibold text-gray-700">Temperature</h3>
+                  </div>
+                  <p className="text-3xl text-[#0f3d33] font-bold mb-2">
+                    {temperature.toFixed(1)}°C
+                  </p>
+                  <LineChart label="Temperature" dataPoints={tempHistory} height={140} />
+                </div>
 
-              xl:grid xl:grid-cols-3 xl:gap-6 xl:overflow-visible xl:snap-none
-            "
-          >
-            {/* Temperature */}
-            <div className="min-w-[85%] xl:min-w-0 snap-center bg-[#f9fafb] p-4 rounded-2xl shadow-sm flex flex-col">
-              <div className="flex items-center gap-2 mb-2">
-                <Thermometer className="text-[#0f3d33]" size={20} />
-                <h3 className="font-semibold text-gray-700">Temperature</h3>
-              </div>
-              <p className="text-3xl sm:text-4xl text-[#0f3d33] font-bold mb-2">
-                {temperature.toFixed(1)}°C
-              </p>
-              <LineChart label="Temperature" dataPoints={tempHistory} />
-            </div>
+                {/* Humidity */}
+                <div className="bg-[#f9fafb] p-4 rounded-2xl shadow-sm flex flex-col">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Droplets className="text-[#0f3d33]" size={20} />
+                    <h3 className="font-semibold text-gray-700">Humidity</h3>
+                  </div>
+                  <p className="text-3xl text-[#0f3d33] font-bold mb-2">
+                    {humidity.toFixed(1)}%
+                  </p>
+                  <LineChart label="Humidity" dataPoints={humidHistory} height={140} />
+                </div>
 
-            {/* Humidity */}
-            <div className="min-w-[85%] xl:min-w-0 snap-center bg-[#f9fafb] p-4 rounded-2xl shadow-sm flex flex-col">
-              <div className="flex items-center gap-2 mb-2">
-                <Droplets className="text-[#0f3d33]" size={20} />
-                <h3 className="font-semibold text-gray-700">Humidity</h3>
+                {/* Light */}
+                <div className="bg-[#f9fafb] p-4 rounded-2xl shadow-sm flex flex-col">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sun className="text-[#0f3d33]" size={20} />
+                    <h3 className="font-semibold text-gray-700">Light</h3>
+                  </div>
+                  <p className="text-3xl text-[#0f3d33] font-bold mb-2">
+                    {light} lx
+                  </p>
+                  <LineChart 
+  dataPoints={lightHistory}
+  isLightChart={true}
+/>
+                </div>
               </div>
-              <p className="text-3xl sm:text-4xl text-[#0f3d33] font-bold mb-2">
-                {humidity.toFixed(1)}%
-              </p>
-              <LineChart label="Humidity" dataPoints={humidHistory} />
-            </div>
 
-            {/* Light */}
-            <div className="min-w-[85%] xl:min-w-0 snap-center bg-[#f9fafb] p-4 rounded-2xl shadow-sm flex flex-col">
-              <div className="flex items-center gap-2 mb-2">
-                <Sun className="text-[#0f3d33]" size={20} />
-                <h3 className="font-semibold text-gray-700">Light</h3>
-              </div>
-              <p className="text-3xl sm:text-4xl text-[#0f3d33] font-bold mb-2">
-                {light} lx
-              </p>
-              <LineChart label="Light" dataPoints={lightHistory} />
-            </div>
-          </div>
         </section>
 
         {/* ENVIRONMENT SUMMARY */}
@@ -289,7 +288,7 @@ const tankLevel = 65; // %
             // Only consider readings between 6AM–6PM for light avg
             const daytimeLight = lightHistory.filter((entry) => {
               const hour = entry.time.getHours();
-              return hour >= 6 && hour < 18;
+              return hour >= 6 && hour < 17;
             });
 
             const avgLight = daytimeLight.length
@@ -544,37 +543,37 @@ const tankLevel = 65; // %
               </div>
 
               {/* NEXT 3 DAYS */}
-<div className="flex flex-col gap-3 mt-4 xl:mt-8">
-  {weather.daily.slice(1, 4).map((day, i) => {
-    const date = new Date(day.dt * 1000);
-    const weekday = date.toLocaleDateString("en-US", {
-      weekday: "short",
-    });
+          <div className="flex flex-col gap-3 mt-4 xl:mt-8">
+            {weather.daily.slice(1, 4).map((day, i) => {
+              const date = new Date(day.dt * 1000);
+              const weekday = date.toLocaleDateString("en-US", {
+                weekday: "short",
+              });
 
-    return (
-      <div
-        key={i}
-        className="
-          flex items-center justify-between
-          bg-[#f9fafb] rounded-2xl p-3 shadow-sm
-        "
-      >
-        <div className="flex flex-col">
-          <p className="text-sm font-medium text-[#0f3d33]">{weekday}</p>
-          <p className="text-sm text-gray-700 font-semibold">
-            {Math.round(day.temp.max)}° / {Math.round(day.temp.min)}°
-          </p>
-        </div>
+              return (
+                <div
+                  key={i}
+                  className="
+                    flex items-center justify-between
+                    bg-[#f9fafb] rounded-2xl p-3 shadow-sm
+                  "
+                >
+                  <div className="flex flex-col">
+                    <p className="text-sm font-medium text-[#0f3d33]">{weekday}</p>
+                    <p className="text-sm text-gray-700 font-semibold">
+                      {Math.round(day.temp.max)}° / {Math.round(day.temp.min)}°
+                    </p>
+                  </div>
 
-        <img
-          src={`https://openweathermap.org/img/wn/${day.weather[0].icon}.png`}
-          className="w-12 h-12"
-          alt="Forecast icon"
-        />
-      </div>
-    );
-  })}
-</div>
+                  <img
+                    src={`https://openweathermap.org/img/wn/${day.weather[0].icon}.png`}
+                    className="w-12 h-12"
+                    alt="Forecast icon"
+                  />
+                </div>
+              );
+            })}
+          </div>
             </div>
           )}
         </section>

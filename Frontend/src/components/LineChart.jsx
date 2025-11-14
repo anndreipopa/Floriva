@@ -25,7 +25,7 @@ export default function LineChart({ dataPoints }) {
   );
 
   return (
-    <div className="w-full h-[290px]">
+   <div className="w-full h-[160px] sm:h-[240px] lg:h-[290px]">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}
