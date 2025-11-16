@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { Thermometer, Droplets, Sun } from "lucide-react";
 import LineChart from "./LineChart";
+import { motion } from "framer-motion";
+
 
 const BACKEND_URL = "https://room-ambiance-monitor.onrender.com";
 const socket = io(BACKEND_URL);
@@ -193,8 +195,13 @@ const tankLevel = 65; // %
     (arr.reduce((a, b) => a + b.value, 0) / (arr.length || 1)).toFixed(1);
 
   return (
-      <main className="
-        flex-1 bg-[#f9fafb] p-4 sm:p-6 md:p-10 pt-20 xl:pt-10 min-h-screen overflow-y-auto min-h-screen">
+       <motion.main
+    className="flex-1 bg-[#f9fafb] p-4 sm:p-6 md:p-10 pt-20 xl:pt-10 min-h-screen overflow-y-auto"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+  >
             {/* GRID */}
       <div className="flex justify-center items-start xl:items-center relative xl:-top-[8px]">
         <div className="
@@ -216,7 +223,7 @@ const tankLevel = 65; // %
             Environment Overview
           </h2>
 
-          {/* CHARTS (responsive grid, no horizontal scroll) */}
+          {/* CHARTS */}
               <div
                 className="
                   grid gap-6
@@ -429,7 +436,7 @@ const tankLevel = 65; // %
                       const humOK =
                         avgHumWindow >= 40 && avgHumWindow <= 75;
                       const lightOK =
-                        avgLightWindow >= 100 && avgLightWindow <= 1500;
+                        avgLightWindow >= 120 && avgLightWindow <= 1500;
 
                       if (tempOK && humOK && lightOK)
                         return "Ideal — perfect growth conditions during this interval.";
@@ -609,7 +616,7 @@ const tankLevel = 65; // %
             {/* TANK LEVEL TITLE */}
             <p className="text-sm text-gray-600 font-medium mt-1">Tank Level</p>
 
-            {/* TANK LEVEL BAR (65% WITH ANIMATION) */}
+            {/* TANK LEVEL BAR */}
             <div className="w-full bg-gray-200 h-3 rounded-full overflow-hidden relative">
               <div
                 className="h-full bg-[#0f3d33] animate-[fillTank_1.8s_ease-out] origin-left"
@@ -646,6 +653,6 @@ const tankLevel = 65; // %
 
       </div>
 </div>
-    </main>
+    </motion.main>
   );
 }
