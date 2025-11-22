@@ -1,190 +1,223 @@
 require('dotenv').config();
 
-const express = require('express'); //  import librarie express in variabila nemodificabila express
-const http = require('http') // import librarie http in variabila nemodificabila http
-const { Server } = require('socket.io'); // import doar componenta Server din libraria socket.io
-const mqtt = require('mqtt'); // import libraria mqtt pentru a putea comunica cu brokerul MQTT
-const {Pool} = require('pg'); // import librariile Pool si Client din libraria pg pentru a putea comunica cu baza de date PostgreSQL
-const cors = require('cors'); // import libraria cors pentru a permite cereri cross-origin
-const path = require('path'); // import libraria path pentru a gestiona căile fișierelor
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const mqtt = require('mqtt');
+const { Pool } = require('pg');
+const cors = require('cors');
+const path = require('path');
 
+// Express + HTTP server
 const app = express();
-const server = http.createServer(app); // creăm un server HTTP folosind express
-const webPort = process.env.PORT || 3000; // portul pe care va asculta serverul, dacă nu este specificat în variabilele de mediu, va folosi 3000
+const server = http.createServer(app);
+
+// Web server port
+const webPort = process.env.PORT || 3000;
+
+// PostgreSQL connection
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL, // folosim variabila de mediu pentru
-    ssl:{
-        rejectUnauthorized: false // dezactivăm verificarea SSL pentru a evita erorile de certificare
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
     }
 });
 
+// Allowed origins for dashboard access
 const allowedOrigins = [
-    "https://florivatest.netlify.app", // Pentru productie
-    "http://127.0.0.1:5500",           // Pentru testare locala cu Live Server
+    "https://florivatest.netlify.app",
+    "http://127.0.0.1:5500",
     "http://localhost:5500",
     "http://localhost:5173",
-    "https://localhost:5173"          // O alternativa pentru Live Server
+    "https://localhost:5173"
 ];
 
-// 2. Definim o singura data optiunile de configurare
 const corsOptions = {
     origin: function (origin, callback) {
-        // Permite cererile daca originea este in lista sau daca nu exista origine (ex: Postman)
         if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
             callback(null, true);
         } else {
-            callback(new Error('Not allowed by CORS'));
+            callback(new Error("CORS not allowed"));
         }
     },
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST"]
 };
 
-// 3. Aplicam ACEEASI configurare si la Express si la Socket.IO
+// Apply CORS for both Express and Socket.IO
 app.use(cors(corsOptions));
 
 const io = new Server(server, {
     cors: corsOptions
 });
 
+// Cache of latest sensor readings
 let latestReadings = null;
-const savingInterval = 30 * 60 * 1000; // intervalul de salvare a datelor în baza de date (30 minute)
 
-app.get('/api/history', async (req, res) => {
-    try {
-        console.log("Cerere GET la /api/history");
-        const query = `SELECT temperature, humidity, light, created_at FROM sensor_data WHERE created_at >= NOW() - INTERVAL '24 hours' ORDER BY created_at DESC`;
-        const {rows} = await pool.query(query);
-        res.json(rows); // trimitem ultimele 48 de înregistrări ca răspuns
-    } catch (err) {
-        console.error("Eroare la obținerea datelor din baza de date:", err);
-        res.status(500).json({ error: "Eroare la interogarea bazei de date" }); // Trimite un raspuns de eroare!
-        }
-    });
+// DB save interval (30 minutes)
+const savingInterval = 30 * 60 * 1000;
 
-app.get('/api/keep-alive', (req, res) => {
-    console.log("Cerere /api/keep-alive primita");
-    res.status(200).json({ status: "Keep server ON" });
-});
 
-app.get('/weather', async (req, res) => {
-    const lat = 44.85;
-    const lon = 24.88;
-    const weatherAPI = process.env.WEATHER_API_KEY;
-    
-    
-    const weatherURL = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&appid=${weatherAPI}&units=metric`;
+// DATABASE SETUP
 
-    try{
-        const response = await fetch(weatherURL);
-        const weatherData = await response.json();
-        res.json(weatherData);
-        console.log("Cerere GET la /weather a fost procesata cu succes folosind ${weatherAPI}");
-    }
-    catch (error) {
-        console.error("Eroare la obținerea datelor meteo:", error);
-        res.status(500).json({ error: "Eroare la obținerea datelor meteo" });
-    }
-});
 
-async function initDatabase(){
+async function initDatabase() {
     const createTableQuery = `
-    CREATE TABLE IF NOT EXISTS sensor_data (
-        id SERIAL PRIMARY KEY,
-        temperature REAL,
-        humidity REAL,
-        light INTEGER,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );`;
+        CREATE TABLE IF NOT EXISTS sensor_data (
+            id SERIAL PRIMARY KEY,
+            temperature REAL,
+            humidity REAL,
+            light INTEGER,
+            soil INTEGER,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+    `;
 
     try {
         await pool.query(createTableQuery);
-        console.log("Tabelul 'sensor_data' a fost creat");
+        console.log("Table 'sensor_data' is ready.");
     } catch (err) {
-        console.error("Eroare la crearea tabelului 'sensor_data':", err);
-        process.exit(1); // închidem aplicația dacă nu putem crea tabelul
+        console.error("Failed to create 'sensor_data' table:", err);
+        process.exit(1);
     }
 }
 
+// Save data periodically
 async function logDataToDatabase() {
-    if(latestReadings) {
-        console.log(`Se pregateste salvarea datelor:`,latestReadings);
-        const { temperatura, umiditate, lumina } = latestReadings;
-        const query = 'INSERT INTO sensor_data (temperature, humidity, light) VALUES ($1, $2, $3)';
+    if (!latestReadings) {
+        console.log("No readings available for database save.");
+        return;
+    }
 
-        try {
-            await pool.query(query, [temperatura, umiditate, lumina]);
-            console.log("Datele au fost salvate în baza de date");
-        } catch (err) {
-            console.error("Eroare la salvarea datelor în baza de date:", err);
-        }
-    } else {
-        console.log("Nu sunt date de salvat în baza de date");
+    const { temp, humidity, lux, soil_raw } = latestReadings;
+
+    const query = `
+        INSERT INTO sensor_data (temperature, humidity, light, soil)
+        VALUES ($1, $2, $3, $4)
+    `;
+
+    try {
+        await pool.query(query, [temp, humidity, lux, soil_raw]);
+        console.log("Sensor data saved to database.");
+    } catch (err) {
+        console.error("Error saving sensor data:", err);
     }
 }
 
 
+// EXPRESS ROUTES
 
 
+// Last 24 hours of sensor history
+app.get('/api/history', async (req, res) => {
+    try {
+        const query = `
+            SELECT temperature, humidity, light, soil, created_at 
+            FROM sensor_data 
+            WHERE created_at >= NOW() - INTERVAL '24 hours'
+            ORDER BY created_at DESC
+        `;
+        const { rows } = await pool.query(query);
+        res.json(rows);
+    } catch (err) {
+        console.error("Error fetching DB history:", err);
+        res.status(500).json({ error: "Database query failed" });
+    }
+});
 
+// Keep-alive endpoint
+app.get('/api/keep-alive', (req, res) => {
+    console.log("Keep-alive request received");
+    res.status(200).json({ status: "Server is awake" });
+});
+
+// Weather endpoint
+app.get('/weather', async (req, res) => {
+    const lat = 44.85;
+    const lon = 24.88;
+    const apiKey = process.env.WEATHER_API_KEY;
+
+    const weatherURL =
+        `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+
+    try {
+        const response = await fetch(weatherURL);
+        const weatherData = await response.json();
+        res.json(weatherData);
+        console.log(`Weather request served`);
+    } catch (error) {
+        console.error("Weather API error:", error);
+        res.status(500).json({ error: "Failed to fetch weather data" });
+    }
+});
+
+
+// MQTT SETUP
 
 
 async function start() {
+    await initDatabase();
 
-await initDatabase(); // inițializăm baza de date și creăm tabelul dacă nu există
+    setInterval(logDataToDatabase, savingInterval);
 
-setInterval(logDataToDatabase, savingInterval); // setăm un interval pentru a salva datele în baza de date la fiecare 5 minute
+    const host = process.env.MQTT_HOST;
+    const port = process.env.MQTT_PORT;
+    const clientID = `mqtt_${Math.random().toString(16).slice(3)}`;
+    const connectURL = `mqtts://${host}:${port}`;
 
-const host = process.env.MQTT_HOST;
-const port = process.env.MQTT_PORT;
-const clientID = `qqtt_${Math.random().toString(16).slice(3)}`;
-const connectURL = `mqtts://${host}:${port}`; // mqtts pentru securitate
-
-const client = mqtt.connect(connectURL, {
-    clientID,
-    clean: true,
-    connectTimeout: 4000,
-    username: process.env.MQTT_USER,
-    password: process.env.MQTT_PASSWORD,
-    reconnectPeriod: 1000,
-});
-
-const topic = process.env.MQTT_TOPIC;
-
-client.on('connect', () => {
-    console.log('Conectat la MQTT!');
-    client.subscribe([topic], () => {
-        console.log(`Abonat la topic: ${topic}`);
-    })
-});
-
-client.on('message', (topic, message) => {
-    console.log(`Mesaj primit pe topic ${topic}`);
-    console.log(`Conținut: ${message.toString()}`);
-
-    const data = JSON.parse(message.toString());
-    latestReadings = data;
-    io.emit('sensorData', data); // trimite datele către toți clienții conectați prin WebSocket
-});
-
-client.on('message', (topic, message) => {
-    if (topic === "monitor/andrei/pompa/status"){
-        io.emit("pumpStatus", message.toString()); //trimite status in dashboard
-    }
-});
-
-io.on('connection', (socket) => {
-    console.log("Dashboard connected");
-
-    socket.on("pumpCommand", (cmd) => {
-        console.log('Pump: ${cmd}');
-        client.publish("monitor/andrei/pompa/cmd", cmd);
+    const client = mqtt.connect(connectURL, {
+        clientID,
+        clean: true,
+        connectTimeout: 4000,
+        username: process.env.MQTT_USER,
+        password: process.env.MQTT_PASSWORD,
+        reconnectPeriod: 1000
     });
-});
 
-server.listen(webPort, () => {
-    console.log(`Dashboard-ul este pe localhost: ${webPort}`);
-});
-console.log("Se incearcă conectarea la brokerul MQTT...");
+    const sensorTopic = process.env.MQTT_TOPIC;
+    const pumpStatusTopic = "monitor/andrei/pompa/status";
+    const pumpCmdTopic = "monitor/andrei/pompa/cmd";
+
+    client.on("connect", () => {
+        console.log("Connected to MQTT broker.");
+
+        client.subscribe([sensorTopic, pumpStatusTopic], () => {
+            console.log(`Subscribed to sensor + pump topics.`);
+        });
+    });
+
+    client.on("message", (topic, message) => {
+        const msg = message.toString();
+
+        // SENSOR DATA
+        if (topic === sensorTopic) {
+            console.log(`Sensor data received: ${msg}`);
+            const data = JSON.parse(msg);
+            latestReadings = data;
+            io.emit("sensorData", data);
+        }
+
+        // PUMP STATUS
+        if (topic === pumpStatusTopic) {
+            console.log(`Pump status received: ${msg}`);
+            io.emit("pumpStatus", msg);
+        }
+    });
+
+    // Dashboard controls
+    io.on("connection", (socket) => {
+        console.log("Dashboard connected");
+
+        socket.on("pumpCommand", (cmd) => {
+            console.log(`Pump command received: ${cmd}`);
+            client.publish(pumpCmdTopic, cmd);
+        });
+    });
+
+    server.listen(webPort, () => {
+        console.log(`Dashboard available on port ${webPort}`);
+    });
+
+    console.log("Attempting MQTT connection...");
 }
 
 start();

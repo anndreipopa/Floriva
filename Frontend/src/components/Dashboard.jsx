@@ -108,11 +108,11 @@ export default function Dashboard() {
   // Live updates
 useEffect(() => {
   socket.on("sensorData", (data) => {
-    setTemperature(data.temperatura || 0);
-    setHumidity(data.umiditate || 0);
-    setLight(data.lumina || 0);
+    setTemperature(data.temp ?? 0);
+    setHumidity(data.humidity ?? 0);
+    setLight(data.lux ?? 0);
 
-    setLastServerUpdate(Date.now()); // Track last server contact for STATUS
+    setLastServerUpdate(Date.now());
   });
 
   return () => socket.off("sensorData");
