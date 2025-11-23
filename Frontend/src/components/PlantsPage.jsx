@@ -23,8 +23,6 @@ export default function Plants() {
 
   const [plants, setPlants] = useState([
     { id: 1, name: "Aloe Vera", type: "Succulent", moisture: 0, light: "High" },
-    { id: 2, name: "Basil", type: "Herb", moisture: 52, light: "High" },
-    { id: 3, name: "Snake Plant", type: "Cacti", moisture: 41, light: "Low" },
   ]);
 
   const startWatering = () => {
@@ -106,7 +104,7 @@ export default function Plants() {
               {/* Moisture */}
               <div className="mt-3">
                 <div className="flex justify-between text-sm text-gray-600 mb-1">
-                  <span>Soil Moisture - Coming soon!</span>
+                  <span>Soil Moisture</span>
                   <span>{p.moisture}%</span>
                 </div>
                 <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
@@ -163,8 +161,7 @@ export default function Plants() {
             >
               <h2 className="text-2xl font-bold text-[#0f3d33] mb-4">
                 {selectedPlant.name}
-              </h2>
-
+              </h2> 
               <div className="text-sm text-gray-600 mb-4">
                 Type: <span className="font-semibold">{selectedPlant.type}</span>
               </div>

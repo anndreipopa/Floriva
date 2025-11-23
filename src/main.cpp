@@ -74,7 +74,7 @@ void loop() {
     static int lastSoilPercent = -1; // last soil percentage reported
 
     const unsigned long ENV_READ_INTERVAL = 5000; // 5 seconds
-    const unsigned long SOIL_READ_INTERVAL = 30000; // 30 seconds
+    const unsigned long SOIL_READ_INTERVAL = 1800000; // 30 minutes
 
     unsigned long now = millis();
 
