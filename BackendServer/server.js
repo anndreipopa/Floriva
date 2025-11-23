@@ -68,6 +68,7 @@ async function initDatabase() {
             humidity REAL,
             light INTEGER,
             soil INTEGER,
+            soil_percent INTEGER,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
     `;
@@ -88,15 +89,15 @@ async function logDataToDatabase() {
         return;
     }
 
-    const { temp, humidity, lux, soil_raw } = latestReadings;
+    const { temp, humidity, lux, soil_raw, soil_percent } = latestReadings;
 
     const query = `
-        INSERT INTO sensor_data (temperature, humidity, light, soil)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO sensor_data (temperature, humidity, light, soil, soil_percent)
+        VALUES ($1, $2, $3, $4, $5)
     `;
 
     try {
-        await pool.query(query, [temp, humidity, lux, soil_raw]);
+        await pool.query(query, [temp, humidity, lux, soil_raw, soil_percent]);
         console.log("Sensor data saved to database.");
     } catch (err) {
         console.error("Error saving sensor data:", err);

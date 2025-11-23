@@ -21,11 +21,11 @@ export default function Plants() {
 
   const [showModal, setShowModal] = useState(false);
 
-  const plants = [
-    { id: 1, name: "Hoya", type: "Tropical", moisture: 63, light: "Medium" },
+  const [plants, setPlants] = useState([
+    { id: 1, name: "Aloe Vera", type: "Succulent", moisture: 0, light: "High" },
     { id: 2, name: "Basil", type: "Herb", moisture: 52, light: "High" },
     { id: 3, name: "Snake Plant", type: "Cacti", moisture: 41, light: "Low" },
-  ];
+  ]);
 
   const startWatering = () => {
     if (watering) return;
@@ -40,6 +40,20 @@ export default function Plants() {
   useEffect(() => {
     socket.on("pumpStatus", (status) => console.log("Pump status:", status));
     return () => socket.off("pumpStatus");
+  }, []);
+
+  useEffect(() => {
+    socket.on("sensorData", (data) => {
+      const percent = data.soil_percent;
+
+      //update only Aloe Vera for demo
+      setPlants((prev) =>
+        prev.map((p) =>
+          p.id === 1 ? { ...p, moisture: percent } : p
+        )
+      );
+    });
+    return () => socket.off("sensorData");
   }, []);
 
   const isDesktop = window.matchMedia("(min-width: 1280px)").matches;

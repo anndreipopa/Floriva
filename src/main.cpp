@@ -67,6 +67,15 @@ void loop() {
     mqttLoop(mqttClient);
 
     static unsigned long lastRead = 0;
+
+    static unsigned long lastEnvRead = 0; // air and light sensors
+    static unsigned long lastSoilRead = 0; // soil
+    static int lastSoilValue = -1; // last soil reading
+    static int lastSoilPercent = -1; // last soil percentage reported
+
+    const unsigned long ENV_READ_INTERVAL = 5000; // 5 seconds
+    const unsigned long SOIL_READ_INTERVAL = 30000; // 30 seconds
+
     unsigned long now = millis();
 
     if (!wifiConnected()) {
@@ -76,33 +85,44 @@ void loop() {
 }
 
     // Read sensors every X seconds
-    if (now - lastRead >= SENSOR_READ_INTERVAL) {
-        lastRead = now;
+    if (now - lastEnvRead >= ENV_READ_INTERVAL) {
+        lastEnvRead = now;
 
-        // === AIR SENSOR ===
+        // AIR SENSOR
         AirData air = readAir();
 
-        // === LIGHT SENSOR ===
+        // LIGHT SENSOR
         float lux = readLightLevel();
 
-        // === SOIL SENSOR ===
-        int soil = readSoilMoistureRaw();
+        // SOIL SENSOR
+        if((now - lastSoilRead >= SOIL_READ_INTERVAL) || (lastSoilValue < 0)) {
+            lastSoilRead = now;
+            lastSoilValue = readSoilMoistureAveraged();
+
+            lastSoilPercent = soilRawToPercent(lastSoilValue);
+            Serial.print("Soil moisture%: ");
+            Serial.println(lastSoilPercent);
+
+            Serial.print("Soil moisture read: ");
+            Serial.println(lastSoilValue);
+        }
 
         // LED blink on successful air sensor read
-        if (air.valid) {
+        /*if (air.valid) {
             digitalWrite(LED_PIN, HIGH);
             delay(100);
             digitalWrite(LED_PIN, LOW);
-        }
+        }*/
 
         // Build JSON message
         char jsonMsg[256];
         snprintf(jsonMsg, sizeof(jsonMsg),
-            "{\"lux\": %.1f, \"temp\": %.1f, \"humidity\": %.1f, \"soil_raw\": %d}",
+            "{\"lux\": %.1f, \"temp\": %.1f, \"humidity\": %.1f, \"soil_raw\": %d, \"soil_percent\": %d}",
             lux,
             air.temperature,
             air.humidity,
-            soil
+            lastSoilValue,
+            lastSoilPercent
         );
 
         Serial.println("Publishing:");
